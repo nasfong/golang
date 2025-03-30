@@ -1,0 +1,9 @@
+# Configuration file for Air
+root = "." 
+tmp_dir = "tmp"
+build = "go build -o ./tmp/main ."
+cmd = "./tmp/main"
+
+[watcher]
+include = ["*.go"]
+exclude = ["tmp", "vendor"]

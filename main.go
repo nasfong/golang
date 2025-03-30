@@ -1,48 +1,36 @@
 package main
 
 import (
-	"encoding/json"
+	"database/sql"
 	"fmt"
 	"log"
-	"net/http"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
-// User struct
-type User struct {
-	ID   int    `json:"id"`
-	Name string `json:"name"`
-}
+func connectDB() (*sql.DB, error) {
+	// MySQL connection string: user:password@tcp(host:port)/dbname
+	dsn := "testuser:testpass@tcp(localhost:3306)/testdb"
 
-var users = []User{
-	{ID: 1, Name: "John Doe"},
-	{ID: 2, Name: "Jane Smith"},
-}
-
-// Handler for /user
-func userHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
-	switch r.Method {
-	case http.MethodGet:
-		json.NewEncoder(w).Encode(users)
-	case http.MethodPost:
-		var newUser User
-		if err := json.NewDecoder(r.Body).Decode(&newUser); err != nil {
-			http.Error(w, "Invalid request payload", http.StatusBadRequest)
-			return
-		}
-		newUser.ID = len(users) + 1
-		users = append(users, newUser)
-
-		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(newUser)
-	default:
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+	// Open connection
+	db, err := sql.Open("mysql", dsn)
+	if err != nil {
+		return nil, err
 	}
+
+	// Verify connection
+	if err = db.Ping(); err != nil {
+		return nil, err
+	}
+
+	fmt.Println("✅ Connected to MySQL!")
+	return db, nil
 }
 
 func main() {
-	http.HandleFunc("/user", userHandler)
-	fmt.Println("Server running on http://localhost:8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	db, err := connectDB()
+	if err != nil {
+		log.Fatalf("❌ Database connection failed: %v", err)
+	}
+	defer db.Close()
 }
